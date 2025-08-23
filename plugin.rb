@@ -6,6 +6,15 @@
 # authors: Bartlomiej Wolk
 # url: https://github.com/bartlomiejwolk/discourse-toc
 
+enabled_site_setting :discourse_toc_enabled
+
+register_asset "stylesheets/discourse-toc.scss"
+
 after_initialize do
-  # Plugin initialization code will go here
+  # Add site setting for enabling/disabling the plugin
+  if respond_to?(:add_to_serializer)
+    add_to_serializer(:site, :discourse_toc_enabled) do
+      SiteSetting.discourse_toc_enabled
+    end
+  end
 end
