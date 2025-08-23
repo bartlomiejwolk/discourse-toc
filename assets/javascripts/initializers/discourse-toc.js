@@ -48,7 +48,25 @@ function initializeToc(api) {
     api.decorateChatMessage(
       (element) => {
         // Apply same TOC processing to chat messages if needed
-        initializeToc(element);
+        const toc = element.querySelector('.discourse-toc');
+        if (toc) {
+          // Add same functionality as in main decorator
+          const links = toc.querySelectorAll('.discourse-toc-link');
+          links.forEach(link => {
+            link.addEventListener('click', function(e) {
+              e.preventDefault();
+              const targetId = this.getAttribute('href').substring(1);
+              const targetElement = document.getElementById(targetId);
+              
+              if (targetElement) {
+                targetElement.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'start'
+                });
+              }
+            });
+          });
+        }
       },
       { id: "discourse-toc-chat" }
     );
