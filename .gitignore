@@ -1,0 +1,18 @@
+# Ignore sensitive files
+*.key
+*.pem
+.env
+.env.local
+config.json
+secrets.json
+
+# Ignore temporary files
+*.tmp
+*.bak
+*~
+
+# Ignore IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
