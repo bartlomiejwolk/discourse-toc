@@ -40,19 +40,18 @@ git commit -m "Initial plugin structure"
 #### SSH Key Generation for GitHub
 ```bash
 # Generated SSH key for GitHub authentication
-ssh-keygen -t ed25519 -C "bartlomiejwolk@github" -f ~/.ssh/id_ed25519 -N ""
+ssh-keygen -t ed25519 -C "your-email@example.com" -f ~/.ssh/id_ed25519 -N ""
 
 # Added GitHub to known hosts
 ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
 
-# Public key (added to GitHub SSH keys):
 # Public key was added to GitHub SSH keys (not shown for security)
 ```
 
 #### GitHub Repository Setup
 ```bash
 # Connected to GitHub repository
-git remote add origin git@github.com:bartlomiejwolk/discourse-toc.git
+git remote add origin git@github.com:username/repository-name.git
 git branch -M main
 git push -u origin main
 ```
@@ -61,7 +60,7 @@ git push -u origin main
 ```bash
 # Set global Git identity
 git config --global user.email "your-email@example.com"
-git config --global user.name "msns"
+git config --global user.name "your-username"
 ```
 
 ### 3. Discourse Integration
@@ -185,8 +184,8 @@ docker exec app sv restart unicorn
 - Plugin files have appropriate permissions
 
 ## Repository Information
-- **GitHub Repository**: https://github.com/bartlomiejwolk/discourse-toc
-- **Clone URL**: git@github.com:bartlomiejwolk/discourse-toc.git
+- **GitHub Repository**: https://github.com/username/repository-name
+- **Clone URL**: git@github.com:username/repository-name.git
 - **Development Branch**: main
 - **Auto-sync**: Enabled via Git post-commit hook
 
