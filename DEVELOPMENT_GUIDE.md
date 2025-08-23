@@ -5,11 +5,305 @@ This document outlines the complete development setup and workflow for the `disc
 
 ## Environment Details
 - **Platform**: Linux (WSL2) with Docker Desktop
+- **OS**: Ubuntu 20.04 LTS (WSL2)
+- **Docker**: Docker Desktop for Windows with WSL2 backend
 - **Discourse Installation**: `/var/discourse` (Docker-based)
 - **Development Directory**: `/root/ld-plugins/discourse-toc`
 - **Container Plugin Path**: `/var/www/discourse/plugins/discourse-toc`
 
-## Initial Setup Process
+## Complete Environment Recreation Guide
+
+### 1. WSL2 Setup
+
+#### Install WSL2 on Windows
+```powershell
+# Run in PowerShell as Administrator
+wsl --install -d Ubuntu-20.04
+# Reboot when prompted
+```
+
+#### Initial WSL2 Configuration
+```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install essential tools
+sudo apt install -y git curl wget vim nano build-essential
+
+# Set up user as root (optional, for development environment)
+# This matches the development setup used
+sudo passwd root
+su root
+cd /root
+```
+
+### 2. Docker Desktop Installation
+
+#### Windows Host Setup
+1. **Install Docker Desktop**
+   - Download from https://www.docker.com/products/docker-desktop
+   - Enable WSL2 integration during installation
+   - Enable WSL2 integration for Ubuntu-20.04 distribution
+
+#### WSL2 Docker Configuration
+```bash
+# Verify Docker is accessible from WSL2
+docker --version
+docker-compose --version
+
+# Test Docker functionality
+docker run hello-world
+```
+
+### 3. Discourse Installation
+
+#### Clone Discourse Docker Repository
+```bash
+cd /var
+sudo mkdir discourse
+cd discourse
+sudo git clone https://github.com/discourse/discourse_docker.git .
+sudo chmod +x launcher
+```
+
+#### Configure Discourse
+```bash
+# Copy sample configuration
+sudo cp samples/standalone.yml containers/app.yml
+
+# Edit configuration (replace with your values)
+sudo nano containers/app.yml
+# Set DISCOURSE_HOSTNAME, DISCOURSE_DEVELOPER_EMAILS, etc.
+
+# Fix world-readable permissions
+sudo chmod o-rwx containers/app.yml
+```
+
+#### Build and Start Discourse
+```bash
+# Initial build (takes 15-30 minutes)
+sudo ./launcher bootstrap app
+
+# Start the container
+sudo ./launcher start app
+
+# Verify installation
+docker ps  # Should show 'app' container running
+```
+
+### 4. Development Tools Setup
+
+#### Claude Code Installation
+```bash
+# Install Claude Code (AI assistant for development)
+# Follow installation instructions from https://claude.ai/code
+# or use package manager if available
+
+# Set up Claude Code for Discourse development
+# Create CLAUDE.md in /var/discourse for context
+```
+
+#### Essential Development Commands
+```bash
+# Common Docker commands for development
+alias app-logs='docker exec app tail -f /var/www/discourse/log/production.log'
+alias app-enter='docker exec -it app bash'
+alias app-restart='docker exec app sv restart unicorn'
+alias app-rebuild='cd /var/discourse && ./launcher rebuild app'
+
+# Add to ~/.bashrc for persistence
+echo "alias app-logs='docker exec app tail -f /var/www/discourse/log/production.log'" >> ~/.bashrc
+echo "alias app-enter='docker exec -it app bash'" >> ~/.bashrc
+echo "alias app-restart='docker exec app sv restart unicorn'" >> ~/.bashrc
+echo "alias app-rebuild='cd /var/discourse && ./launcher rebuild app'" >> ~/.bashrc
+```
+
+### 5. Plugin Development Environment
+
+#### Create Plugin Development Directory
+```bash
+# Create development directory outside Discourse installation
+mkdir -p /root/ld-plugins
+cd /root/ld-plugins
+
+# This directory will hold all plugin development projects
+# and survive container rebuilds
+```
+
+#### Set Up Git Configuration
+```bash
+# Configure Git globally (replace with your details)
+git config --global user.name "Your Name"
+git config --global user.email "your-email@example.com"
+git config --global init.defaultBranch main
+```
+
+#### SSH Key Setup for GitHub
+```bash
+# Generate SSH key for GitHub (replace email)
+ssh-keygen -t ed25519 -C "your-email@example.com" -f ~/.ssh/id_ed25519 -N ""
+
+# Add GitHub to known hosts
+ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+
+# Display public key to add to GitHub
+cat ~/.ssh/id_ed25519.pub
+# Copy this key to GitHub Settings > SSH Keys
+
+# Test SSH connection
+ssh -T git@github.com
+```
+
+### 6. Development Workflow Setup
+
+#### Create Plugin Sync Script
+```bash
+# Create sync script for plugin development
+cat > /root/ld-plugins/sync-plugin.sh << 'EOF'
+#!/bin/bash
+PLUGIN_NAME="discourse-toc"
+DEV_DIR="/root/ld-plugins/$PLUGIN_NAME"
+SHARED_DIR="/var/discourse/shared/standalone/ld-plugins/$PLUGIN_NAME"
+
+echo "Syncing $PLUGIN_NAME plugin..."
+rsync -av --delete "$DEV_DIR/" "$SHARED_DIR/"
+echo "Plugin synced successfully!"
+EOF
+
+# Make script executable
+chmod +x /root/ld-plugins/sync-plugin.sh
+```
+
+#### Set Up Container Plugin Symlink
+```bash
+# Create shared directory
+mkdir -p /var/discourse/shared/standalone/ld-plugins/discourse-toc
+
+# Inside container, create symlink
+docker exec app ln -sf /shared/ld-plugins/discourse-toc /var/www/discourse/plugins/discourse-toc
+```
+
+### 7. TOC Plugin Specific Setup
+
+#### Clone TOC Plugin Repository
+```bash
+cd /root/ld-plugins
+git clone git@github.com:bartlomiejwolk/discourse-toc.git
+cd discourse-toc
+```
+
+#### Set Up Git Post-Commit Hook
+```bash
+# Create automated sync hook
+cat > .git/hooks/post-commit << 'EOF'
+#!/bin/bash
+# Git post-commit hook to automatically sync plugin to Discourse
+
+echo "Running post-commit hook: syncing plugin to Discourse..."
+
+# Run the sync script
+/root/ld-plugins/sync-plugin.sh
+
+echo "Plugin synced to Discourse successfully!"
+EOF
+
+# Make hook executable
+chmod +x .git/hooks/post-commit
+```
+
+#### Test Plugin Setup
+```bash
+# Sync plugin to container
+/root/ld-plugins/sync-plugin.sh
+
+# Restart Discourse to load plugin
+docker exec app sv restart unicorn
+
+# Verify plugin is loaded
+docker exec app bash -c "cd /var/www/discourse && RAILS_ENV=production rails runner 'puts Discourse.plugins.map(&:name)'" | grep discourse-toc
+```
+
+### 8. Environment Verification
+
+#### System Requirements Check
+```bash
+# Verify all components are working
+echo "=== Environment Verification ==="
+
+echo "1. WSL2 Version:"
+wsl --version
+
+echo "2. Docker Status:"
+docker --version
+docker ps
+
+echo "3. Discourse Status:"
+docker exec app bash -c "cd /var/www/discourse && RAILS_ENV=production rails runner 'puts Rails.application.class'"
+
+echo "4. Plugin Status:"
+docker exec app bash -c "cd /var/www/discourse && RAILS_ENV=production rails runner 'puts \"TOC Plugin: #{Discourse.plugins.any? { |p| p.name == \"discourse-toc\" }}\"'"
+
+echo "5. Git Configuration:"
+git config --global --list
+
+echo "6. SSH GitHub Connection:"
+ssh -T git@github.com
+```
+
+### 9. Common Issues and Solutions
+
+#### WSL2 Docker Issues
+```bash
+# If Docker commands fail:
+# 1. Restart Docker Desktop on Windows
+# 2. Restart WSL2: wsl --shutdown, then restart WSL2
+# 3. Verify WSL2 integration is enabled in Docker Desktop settings
+```
+
+#### Discourse Container Issues
+```bash
+# If Discourse won't start:
+cd /var/discourse
+./launcher logs app  # Check for errors
+./launcher rebuild app  # Nuclear option - rebuilds everything
+```
+
+#### Plugin Development Issues
+```bash
+# If plugin doesn't load:
+# 1. Check plugin syntax: docker exec app ls -la /var/www/discourse/plugins/discourse-toc/
+# 2. Check logs: docker exec app tail -f /var/www/discourse/log/production.log
+# 3. Restart unicorn: docker exec app sv restart unicorn
+# 4. Check site setting: discourse_toc_enabled should be true
+```
+
+### 10. Quick Start Summary
+
+For experienced developers who need to recreate this environment:
+
+```bash
+# 1. Install WSL2 Ubuntu 20.04
+wsl --install -d Ubuntu-20.04
+
+# 2. Install Docker Desktop with WSL2 integration
+
+# 3. Set up Discourse
+cd /var && sudo mkdir discourse && cd discourse
+sudo git clone https://github.com/discourse/discourse_docker.git .
+sudo cp samples/standalone.yml containers/app.yml
+# Edit app.yml with your config
+sudo ./launcher bootstrap app && sudo ./launcher start app
+
+# 4. Set up plugin development
+mkdir -p /root/ld-plugins
+cd /root/ld-plugins
+git clone git@github.com:bartlomiejwolk/discourse-toc.git
+./sync-plugin.sh
+docker exec app ln -sf /shared/ld-plugins/discourse-toc /var/www/discourse/plugins/discourse-toc
+docker exec app sv restart unicorn
+```
+
+## Historical Setup Process (Original Development)
 
 ### 1. Development Environment Setup
 
