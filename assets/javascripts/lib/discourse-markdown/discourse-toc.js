@@ -36,8 +36,14 @@ function extractHeaders(tokens) {
         const text = contentToken.content;
         const id = generateTocId(text, existingIds);
         
-        // Add ID to the opening tag
-        token.attrSet('id', id);
+        // Add ID to the opening tag safely
+        if (token.attrSet) {
+          token.attrSet('id', id);
+        } else {
+          // Fallback for older markdown-it versions
+          if (!token.attrs) token.attrs = [];
+          token.attrs.push(['id', id]);
+        }
         
         headers.push({
           level: level,
@@ -52,97 +58,109 @@ function extractHeaders(tokens) {
 }
 
 function buildTocHtml(headers) {
-  if (headers.length === 0) {
+  if (!headers || headers.length === 0) {
     return '';
   }
   
-  let tocHtml = '<div class="discourse-toc">';
-  tocHtml += '<div class="discourse-toc-title">Table of Contents</div>';
-  tocHtml += '<ul class="discourse-toc-list">';
-  
-  let currentLevel = 0;
-  
-  for (const header of headers) {
-    if (header.level > currentLevel) {
-      // Open new nested levels
-      for (let i = currentLevel; i < header.level - 1; i++) {
-        tocHtml += '<li><ul>';
+  try {
+    let tocHtml = '<div class="discourse-toc">';
+    tocHtml += '<div class="discourse-toc-title">Table of Contents</div>';
+    tocHtml += '<ul class="discourse-toc-list">';
+    
+    let currentLevel = 0;
+    
+    for (const header of headers) {
+      // Validate header object
+      if (!header || !header.text || !header.id) {
+        continue;
       }
-      currentLevel = header.level;
-    } else if (header.level < currentLevel) {
-      // Close nested levels
-      for (let i = currentLevel; i > header.level; i--) {
-        tocHtml += '</ul></li>';
+      
+      // Escape HTML in header text
+      const escapedText = header.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      
+      if (header.level > currentLevel) {
+        // Open new nested levels
+        for (let i = currentLevel; i < header.level - 1; i++) {
+          tocHtml += '<li><ul>';
+        }
+        currentLevel = header.level;
+      } else if (header.level < currentLevel) {
+        // Close nested levels
+        for (let i = currentLevel; i > header.level; i--) {
+          tocHtml += '</ul></li>';
+        }
+        tocHtml += '</li>'; // Close current item
+        currentLevel = header.level;
+      } else {
+        // Same level, close previous item
+        tocHtml += '</li>';
       }
-      tocHtml += '</li>'; // Close current item
-      currentLevel = header.level;
-    } else {
-      // Same level, close previous item
-      tocHtml += '</li>';
+      
+      tocHtml += `<li><a href="#${header.id}" class="discourse-toc-link">${escapedText}</a>`;
     }
     
-    tocHtml += `<li><a href="#${header.id}" class="discourse-toc-link">${header.text}</a>`;
+    // Close remaining open items and lists
+    tocHtml += '</li>';
+    for (let i = currentLevel; i > 1; i--) {
+      tocHtml += '</ul></li>';
+    }
+    
+    tocHtml += '</ul></div>';
+    
+    return tocHtml;
+  } catch (error) {
+    console.error('Error building TOC HTML:', error);
+    return '';
   }
-  
-  // Close remaining open items and lists
-  tocHtml += '</li>';
-  for (let i = currentLevel; i > 1; i--) {
-    tocHtml += '</ul></li>';
-  }
-  
-  tocHtml += '</ul></div>';
-  
-  return tocHtml;
 }
 
 function processToc(state) {
-  const tokens = state.tokens;
-  let tocInserted = false;
-  
-  // First pass: extract headers and add IDs
-  const headers = extractHeaders(tokens);
-  
-  // Only generate TOC if we have at least 2 headers
-  if (headers.length < 2) {
-    return;
-  }
-  
-  // Second pass: look for [toc] marker and insert TOC
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
+  try {
+    if (!state || !state.tokens) {
+      return;
+    }
     
-    if (token.type === 'paragraph_open') {
-      const contentToken = tokens[i + 1];
-      if (contentToken && 
-          contentToken.type === 'inline' && 
-          contentToken.content.trim() === '[toc]') {
-        
-        // Replace the [toc] paragraph with our TOC
-        const tocHtml = buildTocHtml(headers);
-        
-        // Replace the paragraph tokens with a single HTML token
-        tokens.splice(i, 3, {
-          type: 'html_raw',
-          content: tocHtml,
-          level: 0,
-          block: true
-        });
-        
-        tocInserted = true;
-        break;
+    const tokens = state.tokens;
+    let tocInserted = false;
+    
+    // First pass: extract headers and add IDs
+    const headers = extractHeaders(tokens);
+    
+    // Only generate TOC if we have at least 2 headers
+    if (headers.length < 2) {
+      return;
+    }
+    
+    // Second pass: look for [toc] marker and insert TOC
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      
+      if (token.type === 'paragraph_open') {
+        const contentToken = tokens[i + 1];
+        if (contentToken && 
+            contentToken.type === 'inline' && 
+            contentToken.content.trim() === '[toc]') {
+          
+          // Replace the [toc] paragraph with our TOC
+          const tocHtml = buildTocHtml(headers);
+          
+          if (tocHtml) {
+            // Replace the paragraph tokens with a single HTML token
+            tokens.splice(i, 3, {
+              type: 'html_raw',
+              content: tocHtml,
+              level: 0,
+              block: true
+            });
+            
+            tocInserted = true;
+            break;
+          }
+        }
       }
     }
-  }
-  
-  // If no [toc] marker found but we have headers, insert at the beginning
-  if (!tocInserted && headers.length >= 2) {
-    const tocHtml = buildTocHtml(headers);
-    tokens.unshift({
-      type: 'html_raw',
-      content: tocHtml,
-      level: 0,
-      block: true
-    });
+  } catch (error) {
+    console.error('Error processing TOC:', error);
   }
 }
 
