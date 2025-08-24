@@ -122,21 +122,57 @@ The plugin uses standard Discourse theme variables for styling:
 - Discourse Docker installation
 - Git with SSH access to GitHub
 
-### Setup
-```bash
-# Clone for development
-git clone git@github.com:bartlomiejwolk/discourse-toc.git ~/ld-plugins/discourse-toc
+### Fast Development Setup (Recommended)
 
-# Set up development environment (see DEVELOPMENT_GUIDE.md for full instructions)
-cd ~/ld-plugins/discourse-toc
-./sync-plugin.sh
+Use Discourse's boot_dev environment for rapid development with hot reload:
+
+```bash
+# One-time setup
+mkdir -p ~/src && cd ~/src
+git clone https://github.com/discourse/discourse.git
+cp -r /root/ld-plugins/discourse-toc ~/src/discourse/plugins/
+cd ~/src/discourse
+d/boot_dev --init
+
+# Start development servers (in separate terminals or background)
+docker exec discourse_dev bash -c "cd /src && bundle exec rails server -b 0.0.0.0 -p 3000" &
+docker exec discourse_dev bash -c "cd /src && pnpm ember serve --host 0.0.0.0 --port 4200 --proxy http://localhost:3000" &
 ```
 
-### Development Workflow
-1. Edit files in `~/ld-plugins/discourse-toc/`
-2. Commit changes - auto-sync runs via Git hook
-3. Test in Discourse container
-4. Push to GitHub when ready
+**Benefits:**
+- **Hot Reload**: JavaScript changes rebuild in ~100ms
+- **Live Development**: Edit files in `~/src/discourse/plugins/discourse-toc/` and see changes immediately
+- **Full Stack**: Rails API server (port 3000) + Ember frontend (port 4200)
+- **Fast Iteration**: No Docker rebuilds needed for code changes
+
+**Access Points:**
+- **Ember Development**: http://localhost:4200 (with hot reload)
+- **Rails API**: http://localhost:3000
+
+### Production Testing
+
+For final testing before deployment:
+
+```bash
+# Commit and push changes
+cd ~/src/discourse/plugins/discourse-toc
+git add . && git commit -m "your changes" && git push
+
+# Deploy to production Discourse
+cd /var/discourse
+./launcher rebuild app
+```
+
+### Development Workflows
+
+#### Fast Development Cycle
+1. **Edit**: Files in `~/src/discourse/plugins/discourse-toc/`
+2. **Test**: Changes immediately available at http://localhost:4200
+3. **Iterate**: JavaScript hot reload in ~100ms, Ruby changes available immediately
+4. **Commit**: When ready, commit and push to GitHub
+
+#### Legacy Workflow (Deprecated)
+The old sync script method with symlinks is no longer recommended due to complexity and rebuild issues. Use boot_dev for development instead.
 
 ## Testing
 

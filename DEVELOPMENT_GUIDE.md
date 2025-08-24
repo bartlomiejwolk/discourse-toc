@@ -3,13 +3,55 @@
 ## Project Overview
 This document outlines the complete development setup and workflow for the `discourse-toc` plugin - a Table of Contents plugin for Discourse posts that automatically generates TOCs for posts with headers.
 
+## Modern Development Approach (Recommended)
+
+### Fast Development with boot_dev
+
+For rapid development with hot reload capabilities, use Discourse's official boot_dev environment:
+
+**Benefits:**
+- JavaScript hot reload in ~100ms
+- No manual syncing required
+- Full Rails + Ember development stack
+- Live development with immediate feedback
+- Same environment used by Discourse core developers
+
+**Setup:**
+```bash
+# One-time setup
+mkdir -p ~/src && cd ~/src
+git clone https://github.com/discourse/discourse.git
+cp -r /root/ld-plugins/discourse-toc ~/src/discourse/plugins/
+cd ~/src/discourse
+d/boot_dev --init
+
+# Start development servers
+docker exec discourse_dev bash -c "cd /src && bundle exec rails server -b 0.0.0.0 -p 3000" &
+docker exec discourse_dev bash -c "cd /src && pnpm ember serve --host 0.0.0.0 --port 4200 --proxy http://localhost:3000" &
+```
+
+**Development Workflow:**
+1. Edit files in `~/src/discourse/plugins/discourse-toc/`
+2. View changes immediately at http://localhost:4200 
+3. JavaScript changes auto-rebuild in ~100ms
+4. Test complete functionality with hot reload
+5. Commit and push when ready
+
+**Access Points:**
+- **Ember Development**: http://localhost:4200 (with hot reload)
+- **Rails API**: http://localhost:3000
+- **Production**: Use rebuild method when ready to deploy
+
+This modern approach replaces the complex sync script method described in the legacy sections below.
+
 ## Environment Details
 - **Platform**: Linux (WSL2) with Docker Desktop
 - **OS**: Ubuntu 20.04 LTS (WSL2)
 - **Docker**: Docker Desktop for Windows with WSL2 backend
-- **Discourse Installation**: `/var/discourse` (Docker-based)
-- **Development Directory**: `/root/ld-plugins/discourse-toc`
-- **Container Plugin Path**: `/var/www/discourse/plugins/discourse-toc`
+- **Production Discourse**: `/var/discourse` (Docker-based)
+- **Development Environment**: `~/src/discourse` (boot_dev with hot reload)
+- **Plugin Development**: `~/src/discourse/plugins/discourse-toc`
+- **Production Plugin Path**: `/var/www/discourse/plugins/discourse-toc`
 
 ## Complete Environment Recreation Guide
 

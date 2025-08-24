@@ -2,7 +2,7 @@
 
 # name: discourse-toc
 # about: Table of Contents plugin for Discourse posts
-# version: 0.1.0
+# version: 0.1.2
 # authors: Bartlomiej Wolk
 # url: https://github.com/bartlomiejwolk/discourse-toc
 
@@ -80,7 +80,7 @@ after_initialize do
   end
 
   # Add topic headers to post serializer for first post only
-  add_to_serializer(:post, :topic_headers, false) do
+  add_to_serializer(:post, :topic_headers, respect_plugin_enabled: false) do
     if SiteSetting.discourse_toc_enabled && object.post_number == 1 && object.topic.present?
       DiscourseTocHelper.extract_headers_from_topic(object.topic)
     else

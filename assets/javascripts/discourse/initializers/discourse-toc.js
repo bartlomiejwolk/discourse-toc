@@ -6,7 +6,7 @@ function buildTopicTocHtml(headers) {
   }
   
   let tocHtml = '<div class="discourse-toc discourse-topic-toc">';
-  tocHtml += '<div class="discourse-toc-title">Table of Contents</div>';
+  tocHtml += '<div class="discourse-toc-title">Table of Contents (v0.1.2)</div>';
   tocHtml += '<ul class="discourse-toc-list">';
   
   let currentLevel = 0;
