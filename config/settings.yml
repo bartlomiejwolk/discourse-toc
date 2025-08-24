@@ -3,9 +3,9 @@ plugins:
     client: true
     default: true
     description: "Enable automatic Table of Contents generation for posts with headers"
-  discourse_toc_min_header_level:
+  discourse_toc_max_header_level:
     client: true
-    default: 1
+    default: 6
     min: 1
     max: 6
-    description: "Minimum header level to include in TOC (1=H1, 2=H2, etc). Headers at this level and above will be included."
+    description: "Maximum header level to include in TOC (1=H1 only, 2=H1+H2, 3=H1+H2+H3, etc). Headers up to this level will be included."

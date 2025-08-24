@@ -17,8 +17,8 @@ after_initialize do
       SiteSetting.discourse_toc_enabled
     end
     
-    add_to_serializer(:site, :discourse_toc_min_header_level) do
-      SiteSetting.discourse_toc_min_header_level
+    add_to_serializer(:site, :discourse_toc_max_header_level) do
+      SiteSetting.discourse_toc_max_header_level
     end
   end
 
@@ -27,7 +27,7 @@ after_initialize do
     def self.extract_headers_from_post(post)
       return [] unless post&.cooked.present?
       
-      min_level = SiteSetting.discourse_toc_min_header_level || 1
+      max_level = SiteSetting.discourse_toc_max_header_level || 6
       headers = []
       doc = Nokogiri::HTML::DocumentFragment.parse(post.cooked)
       
@@ -35,7 +35,7 @@ after_initialize do
         level = header.name[1].to_i
         text = header.inner_text.strip
         next if text.empty?
-        next if level < min_level  # Filter by minimum header level
+        next if level > max_level  # Filter by maximum header level
         
         headers << {
           level: level,
