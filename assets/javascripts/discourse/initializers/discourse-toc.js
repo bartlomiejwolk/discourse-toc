@@ -5,6 +5,11 @@ function buildTopicTocHtml(headers) {
     return '';
   }
   
+  // Get current topic URL to build proper post URLs
+  const currentUrl = window.location.pathname;
+  const topicMatch = currentUrl.match(/^(\/t\/[^\/]+\/\d+)/);
+  const topicBase = topicMatch ? topicMatch[1] : null;
+  
   let tocHtml = '<div class="discourse-toc discourse-topic-toc">';
   tocHtml += '<div class="discourse-toc-title">Table of Contents (v0.1.2)</div>';
   tocHtml += '<ul class="discourse-toc-list">';
@@ -19,6 +24,16 @@ function buildTopicTocHtml(headers) {
     // Escape HTML in header text
     const escapedText = header.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const postIndicator = header.post_number > 1 ? ` (Post #${header.post_number})` : '';
+    
+    // Generate proper Discourse post URL
+    let postUrl;
+    if (header.post_number === 1) {
+      // First post, just use topic URL
+      postUrl = topicBase || '#';
+    } else {
+      // Other posts, use post-specific URL
+      postUrl = topicBase ? `${topicBase}/${header.post_number}` : '#';
+    }
     
     if (header.level > currentLevel) {
       // Open new nested levels
@@ -38,7 +53,7 @@ function buildTopicTocHtml(headers) {
       tocHtml += '</li>';
     }
     
-    tocHtml += `<li><a href="#${header.id}" class="discourse-toc-link" data-post-number="${header.post_number}">${escapedText}${postIndicator}</a>`;
+    tocHtml += `<li><a href="${postUrl}" class="discourse-toc-link" data-post-number="${header.post_number}" data-header-id="${header.id}">${escapedText}${postIndicator}</a>`;
   }
   
   // Close remaining open items and lists
@@ -52,41 +67,6 @@ function buildTopicTocHtml(headers) {
   return tocHtml;
 }
 
-function scrollToTargetInTopic(targetId, postNumber) {
-  // First try to find the element directly (if post is already loaded)
-  let targetElement = document.getElementById(targetId);
-  
-  if (targetElement) {
-    targetElement.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-    return;
-  }
-  
-  // If target not found and it's not post 1, try to navigate to the post
-  if (postNumber > 1) {
-    // Try to find the post and scroll to it
-    const postElement = document.querySelector(`[data-post-number="${postNumber}"]`);
-    if (postElement) {
-      postElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-      
-      // Wait a bit then try to find the header again
-      setTimeout(() => {
-        const delayedTarget = document.getElementById(targetId);
-        if (delayedTarget) {
-          delayedTarget.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          });
-        }
-      }, 500);
-    }
-  }
-}
 
 function initializeToc(api) {
   // Add IDs to headers in ALL posts for cross-post navigation
@@ -174,15 +154,40 @@ function initializeToc(api) {
     function (element) {
       const toc = element.querySelector('.discourse-toc');
       if (toc) {
-        // Add smooth scrolling behavior to TOC links
+        // Add navigation behavior to TOC links
         const links = toc.querySelectorAll('.discourse-toc-link');
         links.forEach(link => {
           link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href').substring(1);
             const postNumber = parseInt(this.getAttribute('data-post-number')) || 1;
+            const headerId = this.getAttribute('data-header-id');
             
-            scrollToTargetInTopic(targetId, postNumber);
+            // For same post (post 1), scroll to header if it exists
+            if (postNumber === 1 && headerId) {
+              const headerElement = document.getElementById(headerId);
+              if (headerElement) {
+                e.preventDefault();
+                headerElement.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'start'
+                });
+                return;
+              }
+            }
+            
+            // For other posts or if header not found, let Discourse handle URL navigation
+            // The href will navigate to the proper post, and then we can try to scroll to header
+            if (postNumber > 1 && headerId) {
+              // After navigation, try to scroll to the specific header
+              setTimeout(() => {
+                const targetHeader = document.getElementById(headerId);
+                if (targetHeader) {
+                  targetHeader.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                  });
+                }
+              }, 500); // Wait for post to load
+            }
           });
         });
         
@@ -218,16 +223,21 @@ function initializeToc(api) {
           const links = toc.querySelectorAll('.discourse-toc-link');
           links.forEach(link => {
             link.addEventListener('click', function(e) {
-              e.preventDefault();
-              const targetId = this.getAttribute('href').substring(1);
-              const targetElement = document.getElementById(targetId);
+              const postNumber = parseInt(this.getAttribute('data-post-number')) || 1;
+              const headerId = this.getAttribute('data-header-id');
               
-              if (targetElement) {
-                targetElement.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'start'
-                });
+              // For same post (post 1), scroll to header if it exists
+              if (postNumber === 1 && headerId) {
+                const headerElement = document.getElementById(headerId);
+                if (headerElement) {
+                  e.preventDefault();
+                  headerElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                  });
+                }
               }
+              // For other posts, let normal navigation handle it
             });
           });
         }
