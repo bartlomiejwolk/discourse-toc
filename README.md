@@ -22,10 +22,19 @@ A powerful Table of Contents plugin for Discourse that automatically generates n
 
 ### Installation
 
-1. **Clone the plugin**
+1. **Add plugin to app.yml**
    ```bash
    cd /var/discourse
-   git clone https://github.com/bartlomiejwolk/discourse-toc.git plugins/discourse-toc
+   # Edit containers/app.yml and add under hooks: after_code:
+   ```
+   
+   Add this to `/var/discourse/containers/app.yml`:
+   ```yaml
+   hooks:
+     after_code:
+       - exec:
+           cmd:
+             - git clone https://github.com/bartlomiejwolk/discourse-toc.git /var/www/discourse/plugins/discourse-toc
    ```
 
 2. **Rebuild Discourse**
@@ -33,34 +42,34 @@ A powerful Table of Contents plugin for Discourse that automatically generates n
    ./launcher rebuild app
    ```
 
-3. **Enable in Admin** (optional - enabled by default)
-   - Go to Admin → Settings → Plugins
-   - Find "discourse toc enabled" and ensure it's checked
+3. **Plugin Auto-Enabled** 
+   - Plugin is enabled by default via `discourse_toc_enabled` site setting
+   - Can be disabled in Admin → Settings → Plugins if needed
 
 ### Usage
 
-Simply add `[toc]` to any post with multiple headers:
+Add `[toc]` to the **first post** of a topic to generate a table of contents from **all posts** in that topic:
 
 ```markdown
 [toc]
 
-# Introduction
+# Introduction (Post 1)
 Welcome to my tutorial!
+```
 
-## Getting Started
+In later posts:
+```markdown
+## Getting Started (Post 2)
 Let's begin with the basics.
 
-### Prerequisites
+### Prerequisites (Post 3)  
 You'll need these items.
 
-### Installation Steps
-Follow these steps.
-
-## Advanced Topics
+## Advanced Topics (Post 4)
 More complex information here.
 ```
 
-**Result:** The `[toc]` marker gets replaced with a clickable table of contents showing all your headers.
+**Result:** The `[toc]` marker in the first post gets replaced with a clickable table of contents showing headers from all posts, with "(Post #N)" indicators for cross-post navigation.
 
 ## Examples
 
