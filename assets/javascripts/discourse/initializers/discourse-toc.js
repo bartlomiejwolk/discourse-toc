@@ -89,6 +89,35 @@ function scrollToTargetInTopic(targetId, postNumber) {
 }
 
 function initializeToc(api) {
+  // Add IDs to headers in ALL posts for cross-post navigation
+  api.decorateCookedElement(
+    function (element, helper) {
+      if (!helper || !helper.getModel) return;
+      
+      const post = helper.getModel();
+      if (!post || !post.topic_headers) return;
+      
+      // Find headers in this post and add the corresponding IDs from topic_headers
+      const headers = element.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      headers.forEach(header => {
+        const headerText = header.textContent.trim();
+        const level = parseInt(header.tagName.substring(1));
+        
+        // Find matching header in topic_headers to get the correct ID
+        const matchingHeader = post.topic_headers.find(h => 
+          h.text === headerText && 
+          h.level === level && 
+          h.post_number === post.post_number
+        );
+        
+        if (matchingHeader && matchingHeader.id && !header.id) {
+          header.id = matchingHeader.id;
+        }
+      });
+    },
+    { id: "discourse-header-ids" }
+  );
+
   // Generate topic-wide TOC for first post if it has [toc] marker
   api.decorateCookedElement(
     function (element, helper) {
