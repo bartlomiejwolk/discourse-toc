@@ -21,7 +21,7 @@ For rapid development with hot reload capabilities, use Discourse's official boo
 # One-time setup
 mkdir -p ~/src && cd ~/src
 git clone https://github.com/discourse/discourse.git
-cp -r /root/ld-plugins/discourse-toc ~/src/discourse/plugins/
+git clone https://github.com/bartlomiejwolk/discourse-toc.git plugins/discourse-toc
 cd ~/src/discourse
 d/boot_dev --init
 
