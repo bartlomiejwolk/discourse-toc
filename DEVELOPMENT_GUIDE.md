@@ -42,6 +42,34 @@ docker exec discourse_dev bash -c "cd /src && pnpm ember serve --host 0.0.0.0 --
 - **Rails API**: http://localhost:3000
 - **Production**: Use rebuild method when ready to deploy
 
+### Admin Account Creation
+
+When first accessing http://localhost:4200, you'll need to create an admin account:
+
+```bash
+# Create admin user script
+cat > /tmp/create_admin.rb << 'EOF'
+User.create!(
+  username: "admin",
+  email: "admin@localhost.dev", 
+  password: "adminpassword123",
+  active: true,
+  approved: true,
+  admin: true
+)
+puts "Admin user created successfully!"
+EOF
+
+# Copy script to container and execute
+docker cp /tmp/create_admin.rb discourse_dev:/tmp/create_admin.rb
+docker exec discourse_dev bash -c "cd /src && bundle exec rails runner /tmp/create_admin.rb"
+```
+
+**Login Credentials:**
+- **Username**: `admin`
+- **Password**: `adminpassword123`
+- **Access**: http://localhost:4200
+
 This modern approach replaces the complex sync script method described in the legacy sections below.
 
 ## Environment Details
