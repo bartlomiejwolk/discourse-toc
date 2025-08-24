@@ -165,17 +165,7 @@ function processToc(state) {
 }
 
 export function setup(helper) {
-  if (!helper.markdownIt) {
-    return;
-  }
-  
-  helper.registerOptions((opts, siteSettings) => {
-    opts.features.toc = siteSettings.discourse_toc_enabled;
-  });
-  
-  helper.registerPlugin((md) => {
-    if (md.options.discourse.features.toc) {
-      md.core.ruler.after('block', 'toc', processToc);
-    }
-  });
+  // Disabled: Topic-wide TOC is now handled client-side
+  // This prevents single-post TOC processing in favor of topic-wide TOC
+  return;
 }

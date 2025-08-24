@@ -66,6 +66,42 @@
   }
 }
 
+// Topic-wide TOC specific styling
+.discourse-topic-toc {
+  border-left: 4px solid var(--primary-medium);
+  
+  .discourse-toc-title {
+    position: relative;
+    
+    &::before {
+      content: "▲";
+      margin-right: 0.5em;
+      font-size: 0.9em;
+    }
+  }
+  
+  .discourse-toc-link {
+    position: relative;
+    
+    // Style post indicators
+    &[data-post-number]:not([data-post-number="1"]) {
+      font-style: italic;
+      
+      &:hover {
+        background: var(--primary-low);
+      }
+    }
+    
+    // Add visual indicator for cross-post links
+    &[data-post-number]:not([data-post-number="1"]):before {
+      content: "→";
+      color: var(--primary-medium);
+      margin-right: 0.3em;
+      font-style: normal;
+    }
+  }
+}
+
 // Mobile responsiveness
 @media screen and (max-width: 768px) {
   .discourse-toc {
