@@ -11,10 +11,14 @@ enabled_site_setting :discourse_toc_enabled
 register_asset "stylesheets/discourse-toc.scss"
 
 after_initialize do
-  # Add site setting for enabling/disabling the plugin
+  # Add site settings to serializer
   if respond_to?(:add_to_serializer)
     add_to_serializer(:site, :discourse_toc_enabled) do
       SiteSetting.discourse_toc_enabled
+    end
+    
+    add_to_serializer(:site, :discourse_toc_min_header_level) do
+      SiteSetting.discourse_toc_min_header_level
     end
   end
 
@@ -23,6 +27,7 @@ after_initialize do
     def self.extract_headers_from_post(post)
       return [] unless post&.cooked.present?
       
+      min_level = SiteSetting.discourse_toc_min_header_level || 1
       headers = []
       doc = Nokogiri::HTML::DocumentFragment.parse(post.cooked)
       
@@ -30,6 +35,7 @@ after_initialize do
         level = header.name[1].to_i
         text = header.inner_text.strip
         next if text.empty?
+        next if level < min_level  # Filter by minimum header level
         
         headers << {
           level: level,

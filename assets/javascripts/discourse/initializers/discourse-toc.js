@@ -251,7 +251,10 @@ export default {
   name: "apply-discourse-toc",
   initialize(container) {
     const siteSettings = container.lookup("service:site-settings");
-    console.log('TOC: Initializer running, setting enabled:', siteSettings.discourse_toc_enabled);
+    console.log('TOC: Initializer running, settings:', {
+      enabled: siteSettings.discourse_toc_enabled,
+      minHeaderLevel: siteSettings.discourse_toc_min_header_level
+    });
     if (siteSettings.discourse_toc_enabled) {
       withPluginApi("0.8.31", initializeToc);
     } else {
