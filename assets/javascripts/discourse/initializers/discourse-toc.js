@@ -28,8 +28,33 @@ function buildTopicTocHtml(headers) {
       continue;
     }
     
-    // Escape HTML in header text
-    const escapedText = header.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Clean HTML content to remove anchor tags but preserve emojis and text
+    let headerContent;
+    if (header.html) {
+      // Create a temporary element to parse and clean the HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = header.html;
+      
+      // Remove all anchor tags but keep their content
+      const anchors = tempDiv.querySelectorAll('a');
+      anchors.forEach(anchor => {
+        // Only remove anchor tags, not their content (except for empty name anchors)
+        if (anchor.getAttribute('name') && anchor.textContent.trim() === '') {
+          // Remove empty anchor name tags completely
+          anchor.remove();
+        } else if (anchor.href && !anchor.getAttribute('name')) {
+          // For href anchors, keep only the text content
+          const textNode = document.createTextNode(anchor.textContent);
+          anchor.parentNode.replaceChild(textNode, anchor);
+        }
+      });
+      
+      headerContent = tempDiv.innerHTML.trim();
+      console.log('TOC: Cleaned header content:', headerContent);
+    } else {
+      headerContent = header.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    
     const postIndicator = header.post_number > 1 ? ` (Post #${header.post_number})` : '';
     
     // Generate proper Discourse post URL
@@ -60,7 +85,8 @@ function buildTopicTocHtml(headers) {
       tocHtml += '</li>';
     }
     
-    tocHtml += `<li class="discourse-toc__item"><a href="${postUrl}" class="discourse-toc__link" data-post-number="${header.post_number}" data-header-id="${header.id}">${escapedText}${postIndicator}</a>`;
+    // Create the link with proper content wrapping
+    tocHtml += `<li class="discourse-toc__item"><a href="${postUrl}" class="discourse-toc__link" data-post-number="${header.post_number}" data-header-id="${header.id}"><span class="discourse-toc__content">${headerContent}</span>${postIndicator}</a>`;
   }
   
   // Close remaining open items and lists

@@ -93,10 +93,17 @@
 .discourse-toc .discourse-toc__link {
   color: var(--toc-text-color);
   text-decoration: none;
-  display: block;
+  display: flex;
+  align-items: center;
   padding: var(--toc-link-padding);
   border-radius: 2px;
   transition: all var(--toc-transition-speed) ease;
+  
+  .discourse-toc__content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2em;
+  }
   
   &:hover,
   &:focus {

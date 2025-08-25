@@ -46,12 +46,14 @@ after_initialize do
       doc.css('h1, h2, h3, h4, h5, h6').each do |header|
         level = header.name[1].to_i
         text = header.inner_text.strip
+        html = header.inner_html.strip
         next if text.empty?
         next if level > max_level  # Filter by maximum header level
         
         headers << {
           level: level,
           text: text,
+          html: html,
           post_number: post.post_number
         }
       end
