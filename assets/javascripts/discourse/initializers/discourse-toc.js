@@ -287,9 +287,7 @@ export default {
   initialize(container) {
     const siteSettings = container.lookup("service:site-settings");
     console.log('TOC: Initializer running, settings:', {
-      enabled: siteSettings.discourse_toc_enabled,
-      maxHeaderLevel: siteSettings.discourse_toc_max_header_level,
-      strictH1Only: siteSettings.discourse_toc_strict_h1_only
+      enabled: siteSettings.discourse_toc_enabled
     });
     if (siteSettings.discourse_toc_enabled) {
       withPluginApi("0.8.31", (api) => initializeToc(api, siteSettings));

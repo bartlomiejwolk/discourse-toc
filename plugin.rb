@@ -17,13 +17,6 @@ after_initialize do
       SiteSetting.discourse_toc_enabled
     end
     
-    add_to_serializer(:site, :discourse_toc_max_header_level) do
-      SiteSetting.discourse_toc_max_header_level
-    end
-    
-    add_to_serializer(:site, :discourse_toc_strict_h1_only) do
-      SiteSetting.discourse_toc_strict_h1_only
-    end
   end
 
   # Helper module for extracting headers from posts
@@ -31,24 +24,15 @@ after_initialize do
     def self.extract_headers_from_post(post)
       return [] unless post&.cooked.present?
       
-      # Check if strict H1 only mode is enabled
-      if SiteSetting.discourse_toc_strict_h1_only
-        return [] unless post_starts_with_h1?(post)
-        # In strict mode, only extract H1 headers
-        max_level = 1
-      else
-        max_level = SiteSetting.discourse_toc_max_header_level || 6
-      end
-      
+      # Always extract only H1 headers
       headers = []
       doc = Nokogiri::HTML::DocumentFragment.parse(post.cooked)
       
-      doc.css('h1, h2, h3, h4, h5, h6').each do |header|
+      doc.css('h1').each do |header|
         level = header.name[1].to_i
         text = header.inner_text.strip
         html = header.inner_html.strip
         next if text.empty?
-        next if level > max_level  # Filter by maximum header level
         
         headers << {
           level: level,
@@ -61,19 +45,6 @@ after_initialize do
       headers
     end
 
-    def self.post_starts_with_h1?(post)
-      return false unless post&.cooked.present?
-      
-      doc = Nokogiri::HTML::DocumentFragment.parse(post.cooked)
-      
-      # Find the first non-empty element
-      first_element = doc.children.find { |node| 
-        node.name != 'text' || node.content.strip.present?
-      }
-      
-      # Check if the first element is an H1
-      first_element && first_element.name == 'h1'
-    end
 
     def self.extract_headers_from_topic(topic)
       return [] unless topic&.posts&.any?
