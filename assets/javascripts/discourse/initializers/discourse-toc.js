@@ -1,8 +1,8 @@
 import { withPluginApi } from "discourse/lib/plugin-api";
 
 function buildTopicTocHtml(headers) {
-  if (!headers || headers.length < 2) {
-    return '';
+  if (!headers) {
+    headers = [];
   }
   
   // Get current topic URL to build proper post URLs
@@ -10,9 +10,16 @@ function buildTopicTocHtml(headers) {
   const topicMatch = currentUrl.match(/^(\/t\/[^\/]+\/\d+)/);
   const topicBase = topicMatch ? topicMatch[1] : null;
   
-  let tocHtml = '<div class="discourse-toc discourse-topic-toc">';
-  tocHtml += '<div class="discourse-toc-title">Table of Contents (v0.1.2)</div>';
-  tocHtml += '<ul class="discourse-toc-list">';
+  let tocHtml = '<div class="discourse-toc discourse-toc--topic">';
+  tocHtml += '<div class="discourse-toc__title">TOC</div>';
+  
+  if (headers.length === 0) {
+    tocHtml += '<div class="discourse-toc__empty">No headers found in this topic.</div>';
+    tocHtml += '</div>';
+    return tocHtml;
+  }
+  
+  tocHtml += '<ul class="discourse-toc__list">';
   
   let currentLevel = 0;
   
@@ -38,7 +45,7 @@ function buildTopicTocHtml(headers) {
     if (header.level > currentLevel) {
       // Open new nested levels
       for (let i = currentLevel; i < header.level - 1; i++) {
-        tocHtml += '<li><ul>';
+        tocHtml += '<li class="discourse-toc__item"><ul class="discourse-toc__list">';
       }
       currentLevel = header.level;
     } else if (header.level < currentLevel) {
@@ -53,7 +60,7 @@ function buildTopicTocHtml(headers) {
       tocHtml += '</li>';
     }
     
-    tocHtml += `<li><a href="${postUrl}" class="discourse-toc-link" data-post-number="${header.post_number}" data-header-id="${header.id}">${escapedText}${postIndicator}</a>`;
+    tocHtml += `<li class="discourse-toc__item"><a href="${postUrl}" class="discourse-toc__link" data-post-number="${header.post_number}" data-header-id="${header.id}">${escapedText}${postIndicator}</a>`;
   }
   
   // Close remaining open items and lists
@@ -68,7 +75,7 @@ function buildTopicTocHtml(headers) {
 }
 
 
-function initializeToc(api) {
+function initializeToc(api, siteSettings) {
   // Add IDs to headers in ALL posts for cross-post navigation
   api.decorateCookedElement(
     function (element, helper) {
@@ -113,9 +120,14 @@ function initializeToc(api) {
       const tocMarker = element.textContent.includes('[toc]') || element.textContent.includes('\\[toc\\]');
       console.log('TOC: marker found:', tocMarker);
       
-      if (!tocMarker || !post.topic_headers || post.topic_headers.length < 2) {
-        console.log('TOC: Conditions not met');
+      if (!tocMarker) {
+        console.log('TOC: No [toc] marker found');
         return;
+      }
+      
+      // Always render TOC when [toc] marker is present, even with 0 headers
+      if (!post.topic_headers) {
+        post.topic_headers = [];
       }
       
       console.log('TOC: Proceeding to generate TOC');
@@ -155,7 +167,7 @@ function initializeToc(api) {
       const toc = element.querySelector('.discourse-toc');
       if (toc) {
         // Add navigation behavior to TOC links
-        const links = toc.querySelectorAll('.discourse-toc-link');
+        const links = toc.querySelectorAll('.discourse-toc__link');
         links.forEach(link => {
           link.addEventListener('click', function(e) {
             const postNumber = parseInt(this.getAttribute('data-post-number')) || 1;
@@ -192,18 +204,15 @@ function initializeToc(api) {
         });
         
         // Add collapse/expand functionality
-        const title = toc.querySelector('.discourse-toc-title');
+        const title = toc.querySelector('.discourse-toc__title');
         if (title) {
-          title.style.cursor = 'pointer';
           title.addEventListener('click', function() {
-            const list = toc.querySelector('.discourse-toc-list');
+            const list = toc.querySelector('.discourse-toc__list');
             if (list) {
-              if (list.style.display === 'none') {
-                list.style.display = 'block';
-                toc.classList.remove('collapsed');
+              if (toc.classList.contains('discourse-toc--collapsed')) {
+                toc.classList.remove('discourse-toc--collapsed');
               } else {
-                list.style.display = 'none';
-                toc.classList.add('collapsed');
+                toc.classList.add('discourse-toc--collapsed');
               }
             }
           });
@@ -220,7 +229,7 @@ function initializeToc(api) {
         const toc = element.querySelector('.discourse-toc');
         if (toc) {
           // Add same functionality as in main decorator
-          const links = toc.querySelectorAll('.discourse-toc-link');
+          const links = toc.querySelectorAll('.discourse-toc__link');
           links.forEach(link => {
             link.addEventListener('click', function(e) {
               const postNumber = parseInt(this.getAttribute('data-post-number')) || 1;
@@ -257,7 +266,7 @@ export default {
       strictH1Only: siteSettings.discourse_toc_strict_h1_only
     });
     if (siteSettings.discourse_toc_enabled) {
-      withPluginApi("0.8.31", initializeToc);
+      withPluginApi("0.8.31", (api) => initializeToc(api, siteSettings));
     } else {
       console.log('TOC: Plugin disabled via site setting');
     }

@@ -1,153 +1,231 @@
-// Table of Contents Styling for Discourse
+// ============================================================================
+// Discourse TOC Plugin - Improved CSS
+// ============================================================================
+
+// CSS Custom Properties for Easy Customization
+.discourse-toc {
+  // Color variables
+  --toc-bg-color: var(--primary-very-low);
+  --toc-border-color: var(--primary-low);
+  --toc-text-color: var(--primary);
+  --toc-text-hover-color: var(--primary-high);
+  --toc-text-muted-color: var(--primary-medium);
+  --toc-link-hover-bg: var(--primary-very-low);
+  
+  // Spacing variables
+  --toc-padding: 1em;
+  --toc-margin: 1em 0;
+  --toc-border-radius: 4px;
+  --toc-link-padding: 0.2em 0;
+  --toc-nested-indent: 1.5em;
+  
+  // Typography variables
+  --toc-font-size: inherit;
+  --toc-title-font-size: 1.1em;
+  --toc-line-height: 1.4;
+  
+  // Animation variables
+  --toc-transition-speed: 0.15s;
+}
+
+// ============================================================================
+// Base TOC Styles
+// ============================================================================
 
 .discourse-toc {
-  background: var(--primary-very-low);
-  border: 1px solid var(--primary-low);
-  border-radius: 4px;
-  margin: 1em 0;
-  padding: 1em;
+  background: var(--toc-bg-color);
+  border: 1px solid var(--toc-border-color);
+  border-radius: var(--toc-border-radius);
+  margin: var(--toc-margin);
+  padding: var(--toc-padding);
   max-width: 100%;
+  font-size: var(--toc-font-size);
+}
+
+// ============================================================================
+// TOC Components
+// ============================================================================
+
+// Title/Header
+.discourse-toc__title {
+  font-weight: bold;
+  font-size: var(--toc-title-font-size);
+  color: var(--toc-text-color);
+  margin-bottom: 0.5em;
+  border-bottom: 1px solid var(--toc-border-color);
+  padding-bottom: 0.5em;
+  cursor: pointer;
+  transition: color var(--toc-transition-speed) ease;
   
-  .discourse-toc-title {
-    font-weight: bold;
-    font-size: 1.1em;
-    color: var(--primary);
-    margin-bottom: 0.5em;
-    border-bottom: 1px solid var(--primary-low);
-    padding-bottom: 0.5em;
-    
-    &:hover {
-      color: var(--primary-high);
-    }
-  }
-  
-  .discourse-toc-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    
-    ul {
-      list-style: none;
-      padding-left: 1.5em;
-      margin: 0.25em 0;
-    }
-    
-    li {
-      margin: 0.25em 0;
-      line-height: 1.4;
-    }
-    
-    .discourse-toc-link {
-      color: var(--primary) !important;
-      text-decoration: none;
-      display: block;
-      padding: 0.2em 0;
-      border-radius: 2px;
-      transition: all 0.15s ease;
-      
-      &:hover {
-        color: var(--primary-high) !important;
-        background: var(--primary-very-low);
-        padding-left: 0.5em;
-      }
-      
-      &:visited {
-        color: var(--primary) !important;
-      }
-      
-      &:link {
-        color: var(--primary) !important;
-      }
-      
-      &:active {
-        color: var(--primary-high) !important;
-      }
-    }
-  }
-  
-  &.collapsed {
-    .discourse-toc-title::after {
-      content: " (collapsed)";
-      font-size: 0.9em;
-      color: var(--primary-medium);
-    }
+  &:hover {
+    color: var(--toc-text-hover-color);
   }
 }
 
-// Topic-wide TOC specific styling
-.discourse-topic-toc {
-  border-left: 4px solid var(--primary-medium);
+// Empty state message
+.discourse-toc__empty {
+  color: var(--toc-text-muted-color);
+  font-style: italic;
+  padding: 0.5em 0;
+  text-align: center;
+}
+
+// List container
+.discourse-toc__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   
-  .discourse-toc-title {
+  // Nested lists
+  .discourse-toc__list {
+    padding-left: var(--toc-nested-indent);
+    margin: 0.25em 0;
+  }
+}
+
+// List items
+.discourse-toc__item {
+  margin: 0.25em 0;
+  line-height: var(--toc-line-height);
+}
+
+// Links - Higher specificity than Discourse core without !important
+.discourse-toc .discourse-toc__link {
+  color: var(--toc-text-color);
+  text-decoration: none;
+  display: block;
+  padding: var(--toc-link-padding);
+  border-radius: 2px;
+  transition: all var(--toc-transition-speed) ease;
+  
+  &:hover,
+  &:focus {
+    color: var(--toc-text-hover-color);
+    background: var(--toc-link-hover-bg);
+    padding-left: 0.5em;
+    outline: none;
+  }
+  
+  &:visited {
+    color: var(--toc-text-color);
+  }
+  
+  &:active {
+    color: var(--toc-text-hover-color);
+  }
+}
+
+// ============================================================================
+// TOC Variants
+// ============================================================================
+
+// Collapsed state
+.discourse-toc--collapsed {
+  .discourse-toc__title::after {
+    content: " (collapsed)";
+    font-size: 0.9em;
+    color: var(--toc-text-muted-color);
+  }
+  
+  .discourse-toc__list {
+    display: none;
+  }
+}
+
+// Topic-wide TOC variant
+.discourse-toc--topic {
+  --toc-accent-color: var(--primary-medium);
+  
+  border-left: 4px solid var(--toc-accent-color);
+  
+  .discourse-toc__title {
     position: relative;
     
     &::before {
       content: "▲";
       margin-right: 0.5em;
       font-size: 0.9em;
+      color: var(--toc-accent-color);
     }
+  }
+}
+
+// Cross-post links (links to other posts)
+.discourse-toc--topic .discourse-toc__link[data-post-number]:not([data-post-number="1"]) {
+  --toc-cross-post-color: var(--toc-text-color);
+  
+  position: relative;
+  color: var(--toc-cross-post-color);
+  
+  &:hover,
+  &:focus {
+    background: var(--primary-low);
+    color: var(--toc-text-hover-color);
   }
   
-  .discourse-toc-link {
-    position: relative;
-    color: var(--primary) !important;
-    
-    // Style post indicators
-    &[data-post-number]:not([data-post-number="1"]) {
-      font-style: italic;
-      color: var(--primary) !important;
-      
-      &:hover {
-        background: var(--primary-low);
-        color: var(--primary-high) !important;
-      }
-      
-      &:visited {
-        color: var(--primary) !important;
-      }
-      
-      &:link {
-        color: var(--primary) !important;
-      }
-    }
-    
-    // Add visual indicator for cross-post links
-    &[data-post-number]:not([data-post-number="1"]):before {
-      content: "→";
-      color: var(--primary-medium);
-      margin-right: 0.3em;
-      font-style: normal;
-    }
+  &:visited {
+    color: var(--toc-cross-post-color);
+  }
+  
+  // Cross-post indicator arrow
+  &::before {
+    content: "→";
+    color: var(--toc-text-muted-color);
+    margin-right: 0.3em;
   }
 }
 
-// Mobile responsiveness
+// ============================================================================
+// Responsive Design
+// ============================================================================
+
 @media screen and (max-width: 768px) {
   .discourse-toc {
-    margin: 0.5em 0;
-    padding: 0.75em;
-    
-    .discourse-toc-title {
-      font-size: 1em;
-    }
-    
-    .discourse-toc-list {
-      ul {
-        padding-left: 1em;
-      }
-    }
+    --toc-margin: 0.5em 0;
+    --toc-padding: 0.75em;
+    --toc-nested-indent: 1em;
+    --toc-title-font-size: 1em;
   }
 }
 
-// Print styles
+// ============================================================================
+// Print Styles
+// ============================================================================
+
 @media print {
   .discourse-toc {
     break-inside: avoid;
     border: 1px solid #ccc;
     background: #f9f9f9;
     
-    .discourse-toc-link {
-      color: #000 !important;
-    }
+    --toc-text-color: #000;
+    --toc-text-hover-color: #000;
+  }
+}
+
+// ============================================================================
+// Theme Customization Helpers
+// ============================================================================
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .discourse-toc {
+    --toc-bg-color: var(--secondary);
+    --toc-border-color: var(--primary-low);
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .discourse-toc {
+    --toc-border-color: var(--primary);
+    border-width: 2px;
+  }
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  .discourse-toc {
+    --toc-transition-speed: 0s;
   }
 }
