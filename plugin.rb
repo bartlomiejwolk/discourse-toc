@@ -9,6 +9,8 @@
 enabled_site_setting :discourse_toc_enabled
 
 register_asset "stylesheets/discourse-toc.scss"
+register_asset "javascripts/lib/discourse-markdown/discourse-toc.js", :server_side
+register_asset "javascripts/discourse/initializers/discourse-toc.js"
 
 after_initialize do
   # Add site settings to serializer
